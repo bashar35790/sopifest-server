@@ -60,8 +60,6 @@ model User {
   wishlistProductIds String[]       @db.ObjectId
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
-
-  @@index([email])
 }
 
 model RefreshToken {
@@ -101,8 +99,6 @@ model Category {
   products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  @@index([slug])
 }
 
 model Product {
@@ -142,7 +138,6 @@ model Product {
   @@index([categoryId, status, isDeleted])
   @@index([basePrice])
   @@index([rating])
-  @@index([slug])
 }
 
 type ProductImage {
@@ -200,7 +195,6 @@ model Order {
   updatedAt       DateTime      @updatedAt
 
   @@index([userId, orderStatus])
-  @@index([orderNumber])
 }
 
 type OrderItem {
