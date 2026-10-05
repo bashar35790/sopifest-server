@@ -1,0 +1,267 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+  STAFF
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  OUT_OF_STOCK
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  COD
+  STRIPE
+  SSLCOMMERZ
+}
+
+model User {
+  id                 String         @id @default(auto()) @map("_id") @db.ObjectId
+  name               String
+  email              String         @unique
+  passwordHash       String
+  role               Role           @default(USER)
+  phone              String?
+  avatar             String?
+  isActive           Boolean        @default(true)
+  isBanned           Boolean        @default(false)
+  banReason          String?
+  addresses          Address[]
+  orders             Order[]
+  reviews            Review[]
+  refreshTokens      RefreshToken[]
+  wishlistProductIds String[]       @db.ObjectId
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@index([email])
+}
+
+model RefreshToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  tokenHash String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @db.ObjectId
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+type Address {
+  id            String  @default(uuid())
+  fullName      String
+  phone         String
+  streetAddress String
+  city          String
+  state         String
+  postalCode    String
+  country       String
+  isDefault     Boolean @default(false)
+}
+
+model Category {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  image       String
+  featured    Boolean   @default(false)
+  parentId    String?   @db.ObjectId
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+}
+
+model Product {
+  id                String           @id @default(auto()) @map("_id") @db.ObjectId
+  title             String
+  slug              String           @unique
+  sku               String           @unique
+  brand             String?
+  description       String
+  shortDescription  String?
+  category          Category         @relation(fields: [categoryId], references: [id])
+  categoryId        String           @db.ObjectId
+  status            ProductStatus    @default(PUBLISHED)
+  basePrice         Float
+  discountPrice     Float?
+  images            ProductImage[]
+  hasVariants       Boolean          @default(false)
+  variants          ProductVariant[]
+  specifications    Specification[]
+  weightKg          Float?
+  dimensions        Dimensions?
+  stockCount        Int              @default(0)
+  lowStockThreshold Int              @default(5)
+  rating            Float            @default(0.0)
+  numReviews        Int              @default(0)
+  featured          Boolean          @default(false)
+  isNewArrival      Boolean          @default(true)
+  isTopSeller       Boolean          @default(false)
+  isDeleted         Boolean          @default(false)
+  deletedAt         DateTime?
+  metaTitle         String?
+  metaDescription   String?
+  reviews           Review[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([categoryId, status, isDeleted])
+  @@index([basePrice])
+  @@index([rating])
+  @@index([slug])
+}
+
+type ProductImage {
+  url       String
+  publicId  String?
+  alt       String?
+  isPrimary Boolean @default(false)
+  order     Int     @default(0)
+}
+
+type ProductVariant {
+  id            String  @default(uuid())
+  sku           String
+  title         String
+  attributes    Json
+  price         Float
+  discountPrice Float?
+  stockCount    Int     @default(0)
+  image         String?
+}
+
+type Specification {
+  key   String
+  value String
+}
+
+type Dimensions {
+  length Float
+  width  Float
+  height Float
+  unit   String @default("cm")
+}
+
+model Order {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber     String        @unique
+  user            User          @relation(fields: [userId], references: [id])
+  userId          String        @db.ObjectId
+  items           OrderItem[]
+  shippingAddress Address
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus @default(PENDING)
+  orderStatus     OrderStatus   @default(PENDING)
+  subtotal        Float
+  discountTotal   Float         @default(0.0)
+  couponCode      String?
+  shippingFee     Float         @default(0.0)
+  tax             Float         @default(0.0)
+  total           Float
+  paymentRef      String?
+  trackingNumber  String?
+  customerNotes   String?
+  internalNotes   String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([userId, orderStatus])
+  @@index([orderNumber])
+}
+
+type OrderItem {
+  productId  String  @db.ObjectId
+  variantId  String?
+  title      String
+  sku        String
+  image      String
+  unitPrice  Float
+  quantity   Int
+  totalPrice Float
+  attributes Json?
+}
+
+model Review {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String   @db.ObjectId
+  rating     Int
+  title      String
+  comment    String
+  isVerified Boolean  @default(false)
+  isApproved Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([productId, userId])
+  @@index([productId, isApproved])
+}
+
+model Coupon {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  code            String    @unique
+  discountPercent Float?
+  discountAmount  Float?
+  minOrderValue   Float     @default(0.0)
+  maxDiscount     Float?
+  startDate       DateTime  @default(now())
+  expiryDate      DateTime
+  usageLimit      Int?
+  usageCount      Int       @default(0)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  actorId    String   @db.ObjectId
+  actorEmail String
+  actorRole  Role
+  action     String
+  resource   String
+  resourceId String?
+  changes    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([resourceId])
+}
