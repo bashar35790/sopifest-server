@@ -12,6 +12,7 @@ import productRoutes from "./routes/product.routes";
 import adminRoutes from "./routes/admin.routes";
 import userRoutes from "./routes/user.routes";
 import orderRoutes from "./routes/order.routes";
+import paymentRoutes, { paymentWebhookRouter } from "./routes/payment.routes";
 
 export const createApp = (): Application => {
   const app: Application = express();
@@ -37,6 +38,11 @@ export const createApp = (): Application => {
   }
 
   // Body parsing & Cookie parsing
+  // NOTE: the Stripe webhook needs the exact raw bytes for signature
+  // verification, so only the webhook router is mounted before
+  // express.json. Everything else mounts after parsing below.
+  app.use("/api/v1/payments/webhook", paymentWebhookRouter);
+
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
   app.use(cookieParser());
@@ -50,6 +56,9 @@ export const createApp = (): Application => {
   app.use("/api/v1", userRoutes);
   // Zero-trust checkout (POST /api/v1/orders)
   app.use("/api/v1/orders", orderRoutes);
+  // Payment intent (POST /api/v1/payments/create-intent).
+  // Webhook (POST /api/v1/payments/webhook) was mounted pre-parsing above.
+  app.use("/api/v1/payments", paymentRoutes);
 
   // Health check endpoint
   app.get("/api/v1/health", (_req: Request, res: Response) => {

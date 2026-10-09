@@ -26,6 +26,12 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  // Stripe online payments (optional until keys are provisioned).
+  // create-intent runs in mock mode when STRIPE_SECRET_KEY is absent,
+  // so checkout UI (Task 36) can be built/tested without live keys.
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_CURRENCY: z.string().default("usd"),
 });
 
 const parseEnv = () => {
