@@ -11,6 +11,7 @@ import categoryRoutes from "./routes/category.routes";
 import productRoutes from "./routes/product.routes";
 import adminRoutes from "./routes/admin.routes";
 import userRoutes from "./routes/user.routes";
+import orderRoutes from "./routes/order.routes";
 
 export const createApp = (): Application => {
   const app: Application = express();
@@ -47,6 +48,8 @@ export const createApp = (): Application => {
   app.use("/api/v1/admin", adminRoutes);
   // User router carries full sub-paths (/wishlist, /cart/sync)
   app.use("/api/v1", userRoutes);
+  // Zero-trust checkout (POST /api/v1/orders)
+  app.use("/api/v1/orders", orderRoutes);
 
   // Health check endpoint
   app.get("/api/v1/health", (_req: Request, res: Response) => {
