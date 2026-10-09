@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from "./middlewares/error.middleware";
 
 import authRoutes from "./routes/auth.routes";
 import categoryRoutes from "./routes/category.routes";
+import productRoutes from "./routes/product.routes";
 
 export const createApp = (): Application => {
   const app: Application = express();
@@ -40,6 +41,7 @@ export const createApp = (): Application => {
   // Routes
   app.use("/api/v1/auth", authRoutes);
   app.use("/api/v1/categories", categoryRoutes);
+  app.use("/api/v1/products", productRoutes);
 
   // Health check endpoint
   app.get("/api/v1/health", (_req: Request, res: Response) => {
