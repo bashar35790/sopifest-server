@@ -31,7 +31,7 @@ export const getCategories = async (req: Request, res: Response, next: NextFunct
 
 export const getCategory = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const category = await CategoryService.getCategoryById(req.params.id);
+    const category = await CategoryService.getCategoryById(req.params.id as string);
     res.status(200).json({
       status: "success",
       data: {
@@ -45,7 +45,7 @@ export const getCategory = async (req: Request, res: Response, next: NextFunctio
 
 export const updateCategory = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const category = await CategoryService.updateCategory(req.params.id, req.body);
+    const category = await CategoryService.updateCategory(req.params.id as string, req.body);
     res.status(200).json({
       status: "success",
       data: {
@@ -59,7 +59,7 @@ export const updateCategory = async (req: Request, res: Response, next: NextFunc
 
 export const deleteCategory = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await CategoryService.deleteCategory(req.params.id);
+    await CategoryService.deleteCategory(req.params.id as string);
     res.status(204).send();
   } catch (error) {
     next(error);
