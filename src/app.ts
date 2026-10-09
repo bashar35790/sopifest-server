@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import { env } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware";
 
+import authRoutes from "./routes/auth.routes";
+
 export const createApp = (): Application => {
   const app: Application = express();
 
@@ -33,6 +35,9 @@ export const createApp = (): Application => {
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
   app.use(cookieParser());
+
+  // Routes
+  app.use("/api/v1/auth", authRoutes);
 
   // Health check endpoint
   app.get("/api/v1/health", (_req: Request, res: Response) => {
