@@ -1,7 +1,7 @@
 import { prisma } from "../config/prisma";
 import { Prisma } from "@prisma/client";
 import { AppError } from "../utils/appError";
-import { CreateOrderInput } from "../validations/order.validation";
+import { CreateOrderInput, MyOrdersQuery } from "../validations/order.validation";
 
 // Zero-trust commerce constants.
 // Single source of truth lives server-side; the client never sends prices.
@@ -327,5 +327,58 @@ export const createOrder = async (userId: string, input: CreateOrderInput) => {
 
     return order;
   });
+};
+
+/**
+ * Paginated order history for the authenticated user.
+ * Optional filters on orderStatus / paymentStatus.
+ * Users can only ever see their own orders (userId scoped).
+ */
+export const getMyOrders = async (userId: string, query: MyOrdersQuery) => {
+  const page = query.page && query.page > 0 ? query.page : 1;
+  const limit =
+    query.limit && query.limit > 0 && query.limit <= 50 ? query.limit : 10;
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.OrderWhereInput = { userId };
+  if (query.orderStatus) where.orderStatus = query.orderStatus;
+  if (query.paymentStatus) where.paymentStatus = query.paymentStatus;
+
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.order.count({ where }),
+  ]);
+
+  return {
+    orders,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+/**
+ * Full order receipt. Ownership enforced: a user can only read
+ * orders that belong to their own userId (404 otherwise, so order
+ * ids are not enumerable across accounts).
+ */
+export const getOrderById = async (userId: string, orderId: string) => {
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, userId },
+  });
+
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+
+  return order;
 };
 

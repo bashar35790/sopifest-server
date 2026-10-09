@@ -55,3 +55,43 @@ export const createOrderSchema = z.object({
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>["body"];
 export type OrderItemInput = z.infer<typeof orderItemSchema>;
+
+const ORDER_STATUSES = [
+  "PENDING",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+  "REFUNDED",
+] as const;
+
+const PAYMENT_STATUSES = ["PENDING", "PAID", "FAILED", "REFUNDED"] as const;
+
+export const myOrdersQuerySchema = z.object({
+  query: z.object({
+    page: z
+      .string()
+      .optional()
+      .transform((val) => (val ? parseInt(val, 10) : 1)),
+    limit: z
+      .string()
+      .optional()
+      .transform((val) => (val ? Math.min(parseInt(val, 10), 50) : 10)),
+    orderStatus: z.enum(ORDER_STATUSES).optional(),
+    paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
+  }),
+});
+
+export const orderIdParamsSchema = z.object({
+  params: z.object({
+    id: z
+      .string({ required_error: "Order ID is required" })
+      .min(1)
+      .refine((val) => /^[0-9a-fA-F]{24}$/.test(val), {
+        message: "Invalid order ID format",
+      }),
+  }),
+});
+
+export type MyOrdersQuery = z.infer<typeof myOrdersQuerySchema>["query"];
+export type OrderIdParams = z.infer<typeof orderIdParamsSchema>["params"];
