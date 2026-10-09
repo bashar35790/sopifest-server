@@ -15,6 +15,7 @@ import {
   deleteCategorySchema,
 } from "../validations/category.validation";
 import { getLowStockQuerySchema } from "../validations/inventory.validation";
+import { salesChartQuerySchema } from "../validations/analytics.validation";
 import { authenticate, requireRole } from "../middlewares/auth.middleware";
 
 const router = Router();
@@ -28,6 +29,15 @@ router.get(
   "/inventory/low-stock",
   validate(getLowStockQuerySchema),
   AdminController.getLowStock
+);
+
+// Analytics (Task 38). Overview first, then the chart.
+router.get("/analytics/overview", AdminController.getAnalyticsOverview);
+
+router.get(
+  "/analytics/sales-chart",
+  validate(salesChartQuerySchema),
+  AdminController.getSalesChart
 );
 
 // Product management endpoints (/api/v1/admin/products)
