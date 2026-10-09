@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as ProductController from "../controllers/product.controller";
 import * as CategoryController from "../controllers/category.controller";
+import * as AdminController from "../controllers/admin.controller";
 import { validate } from "../middlewares/validate.middleware";
 import {
   createProductSchema,
@@ -13,6 +14,7 @@ import {
   updateCategorySchema,
   deleteCategorySchema,
 } from "../validations/category.validation";
+import { getLowStockQuerySchema } from "../validations/inventory.validation";
 import { authenticate, requireRole } from "../middlewares/auth.middleware";
 
 const router = Router();
@@ -20,6 +22,13 @@ const router = Router();
 // Protect all admin routes
 router.use(authenticate);
 router.use(requireRole(["ADMIN", "STAFF"]));
+
+// Inventory alerts (/api/v1/admin/inventory/low-stock)
+router.get(
+  "/inventory/low-stock",
+  validate(getLowStockQuerySchema),
+  AdminController.getLowStock
+);
 
 // Product management endpoints (/api/v1/admin/products)
 router.get(
